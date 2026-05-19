@@ -1,0 +1,693 @@
+{
+  "version": "2.2.0",
+  "summary": {
+    "title": "Benefit-Services – API Trazabilidad Animal",
+    "owner": "Seguridad de la Información – TdeA",
+    "description": "Modelado de amenazas del sistema benefit-services. API REST de trazabilidad de beneficio animal. Stack: Laravel 13, PHP 8.4, PostgreSQL, Sanctum, Docker.",
+    "id": 1
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "DFD – Benefit Services",
+        "diagramType": "STRIDE",
+        "thumbnail": "./public/content/images/thumbnail.jpg",
+        "version": "2.2.0",
+        "cells": [
+
+          {
+            "type": "tm.BoundaryBox",
+            "size": { "width": 780, "height": 200 },
+            "position": { "x": 20, "y": 20 },
+            "attrs": {
+              "line": { "stroke": "#FF0000", "strokeDasharray": "10 5" },
+              "label": { "text": "Internet Boundary (WAN)" }
+            },
+            "id": "boundary-internet",
+            "zIndex": 1,
+            "label": "Internet Boundary (WAN)"
+          },
+
+          {
+            "type": "tm.BoundaryBox",
+            "size": { "width": 780, "height": 400 },
+            "position": { "x": 20, "y": 240 },
+            "attrs": {
+              "line": { "stroke": "#0000FF", "strokeDasharray": "10 5" },
+              "label": { "text": "Internal Service Boundary (Docker)" }
+            },
+            "id": "boundary-internal",
+            "zIndex": 1,
+            "label": "Internal Service Boundary (Docker)"
+          },
+
+          {
+            "type": "tm.Actor",
+            "size": { "width": 120, "height": 60 },
+            "position": { "x": 50, "y": 90 },
+            "attrs": { "label": { "text": "Cliente\n(Frontend / App)" } },
+            "id": "actor-cliente",
+            "zIndex": 10,
+            "label": "Cliente (Frontend / App)",
+            "data": {
+              "type": "tm.Actor",
+              "name": "Cliente (Frontend / App)",
+              "description": "Consume la API REST de benefit-services mediante tokens Sanctum. Puede ser navegador web o app móvil.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Actor",
+            "size": { "width": 130, "height": 60 },
+            "position": { "x": 640, "y": 50 },
+            "attrs": { "label": { "text": "Auth Server\n(OAuth / Roles)" } },
+            "id": "actor-auth",
+            "zIndex": 10,
+            "label": "Auth Server (OAuth / Roles)",
+            "data": {
+              "type": "tm.Actor",
+              "name": "Auth Server (OAuth / Roles)",
+              "description": "Servidor externo de autenticación OAuth y gestión de roles. Configurado vía AUTHORIZATION_SERVER_URL en .env",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 140, "height": 60 },
+            "position": { "x": 330, "y": 80 },
+            "attrs": { "label": { "text": "Nginx\n(Reverse Proxy)" } },
+            "id": "process-nginx",
+            "zIndex": 10,
+            "label": "Nginx (Reverse Proxy)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Nginx (Reverse Proxy)",
+              "description": "Servidor Nginx actúa como proxy inverso ante PHP-FPM. Punto de entrada HTTP/HTTPS del sistema. Corre en contenedor Docker.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": true,
+              "privilegeLevel": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 160, "height": 70 },
+            "position": { "x": 320, "y": 310 },
+            "attrs": { "label": { "text": "Laravel API\n(PHP-FPM · Sanctum)" } },
+            "id": "process-laravel",
+            "zIndex": 10,
+            "label": "Laravel API (PHP-FPM · Sanctum)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Laravel API (PHP-FPM · Sanctum)",
+              "description": "Backend principal Laravel 13. Controllers → Services → Models. Gestiona autenticación Sanctum, roles, lotes, individuos, despachos, corrales, cavas, cuarteo, necropsia. Multi-tenant via BENEFIT_INSTANCE.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": true,
+              "isWebApplication": true,
+              "privilegeLevel": "alto",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 130, "height": 55 },
+            "position": { "x": 570, "y": 290 },
+            "attrs": { "label": { "text": "Storage Server\n(Archivos)" } },
+            "id": "process-storage",
+            "zIndex": 10,
+            "label": "Storage Server (Archivos)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Storage Server",
+              "description": "Almacenamiento externo de archivos. Configurado vía STORAGE_SERVER_URL. Maneja uploads de lotes, registros de entrada y datos de importación.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 130, "height": 55 },
+            "position": { "x": 570, "y": 375 },
+            "attrs": { "label": { "text": "Notify Server\n(Email / Push)" } },
+            "id": "process-notify",
+            "zIndex": 10,
+            "label": "Notify Server (Email / Push)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Notify Server",
+              "description": "Servicio externo de notificaciones. Configurado vía NOTIFY_SERVER_URL. Envía emails de reportes PDF, notificaciones de despacho y alertas del sistema.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 130, "height": 55 },
+            "position": { "x": 570, "y": 460 },
+            "attrs": { "label": { "text": "Import Server\n(Masiva)" } },
+            "id": "process-import",
+            "zIndex": 10,
+            "label": "Import Server (Importación Masiva)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Import Server",
+              "description": "Servicio externo de importación masiva de datos. Configurado vía IMPORT_SERVER_URL. Procesa archivos de carga masiva de animales, lotes y licencias ICA.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Process",
+            "size": { "width": 140, "height": 55 },
+            "position": { "x": 320, "y": 540 },
+            "attrs": { "label": { "text": "Autenticación\n(Sanctum · Roles)" } },
+            "id": "process-auth",
+            "zIndex": 10,
+            "label": "Autenticación (Sanctum · Roles)",
+            "data": {
+              "type": "tm.Process",
+              "name": "Autenticación (Sanctum · Roles)",
+              "description": "Módulo de autenticación Laravel Sanctum. Gestiona tokens Bearer, login (POST /auth/login), logout (POST /auth/logout) y verificación de roles por módulo.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Store",
+            "size": { "width": 140, "height": 60 },
+            "position": { "x": 100, "y": 400 },
+            "attrs": { "label": { "text": "PostgreSQL\n(lote · individuo · corral)" } },
+            "id": "store-postgres",
+            "zIndex": 10,
+            "label": "PostgreSQL DB",
+            "data": {
+              "type": "tm.Store",
+              "name": "PostgreSQL DB",
+              "description": "Base de datos relacional principal. Tablas: lote, individuo, corral, cava, turnobeneficio, despacho, desembarque, inspeccionantemortem. Multi-tenant controlado por BENEFIT_INSTANCE (INFOCGAN / INFOBLE).",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "isALog": false,
+              "storesCredentials": true,
+              "isEncrypted": false,
+              "isSigned": false,
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f1",
+            "zIndex": 10,
+            "label": "F1: HTTPS Request (Bearer Token)",
+            "source": { "id": "actor-cliente" },
+            "target": { "id": "process-nginx" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F1: HTTPS Request",
+              "description": "Peticiones HTTP/HTTPS del cliente a Nginx. Incluye token Bearer Sanctum en cabecera Authorization para todos los endpoints excepto POST /auth/login. Cruza Internet Boundary.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "isALog": false,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t1",
+                  "title": "Spoofing del cliente mediante token Sanctum robado",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Un atacante puede interceptar un token Sanctum (tráfico sin TLS, logs expuestos) y suplantar al usuario legítimo en todos los endpoints de la API.",
+                  "mitigation": "Forzar HTTPS en Nginx, tokens de vida corta, revocación en logout (POST /auth/logout ya existe).",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t2",
+                  "title": "Manipulación de datos de lote en tránsito (Tampering)",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "Sin TLS forzado, un atacante MITM puede modificar peticiones PUT /batch/{id} alterando datos regulatorios ICA de trazabilidad animal.",
+                  "mitigation": "HTTPS obligatorio en Nginx, HSTS, validación de integridad con BatchUpdateRequest.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t3",
+                  "title": "DDoS contra API REST sin rate limiting",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Denial of service",
+                  "description": "Sin rate limiting en Nginx, un atacante puede saturar endpoints críticos como POST /turnbenefit/start paralizando operaciones de beneficio.",
+                  "mitigation": "limit_req_zone en Nginx, middleware throttle:60,1 en Laravel.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t4",
+                  "title": "Exposición de tokens y datos en tráfico HTTP sin cifrar",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "Si Nginx no fuerza HTTPS, tokens Bearer y datos de trazabilidad viajan en texto plano y pueden ser capturados con un sniffer de red.",
+                  "mitigation": "TLS 1.2+ obligatorio, redirección 301 HTTP→HTTPS, HSTS.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f4",
+            "zIndex": 10,
+            "label": "F4: JSON Response",
+            "source": { "id": "process-nginx" },
+            "target": { "id": "actor-cliente" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F4: JSON Response",
+              "description": "Respuesta JSON de Nginx al cliente. Puede contener datos sensibles de trazabilidad animal, pesos, licencias ICA.",
+              "outOfScope": false,
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t5",
+                  "title": "Divulgación de información interna en mensajes de error",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "El manejo de $this->exception($e) puede exponer stack traces, nombres de tablas PostgreSQL, rutas internas o versiones de Laravel en producción.",
+                  "mitigation": "APP_DEBUG=false en producción, mensajes de error genéricos al cliente, logging interno.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f2",
+            "zIndex": 10,
+            "label": "F2: HTTP interno (proxy)",
+            "source": { "id": "process-nginx" },
+            "target": { "id": "process-laravel" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F2: HTTP interno proxied",
+              "description": "Nginx redirige la petición internamente a PHP-FPM en la red Docker.",
+              "outOfScope": false,
+              "protocol": "HTTP",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f7",
+            "zIndex": 10,
+            "label": "F7: Token OAuth → Auth Server",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "actor-auth" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F7: Token OAuth al Auth Server",
+              "description": "Laravel API envía tokens al Authorization Server externo para verificar roles y permisos. Cruza Internal Service Boundary.",
+              "outOfScope": false,
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t6",
+                  "title": "Suplantación del Authorization Server externo",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Un atacante puede suplantar AUTHORIZATION_SERVER_URL con un servidor falso que retorne roles elevados (admin), comprometiendo todo el sistema de autorización.",
+                  "mitigation": "Validar certificado TLS del Auth Server, pinning de certificados, verificar firma de respuestas OAuth.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t7",
+                  "title": "Escalada de privilegios por manipulación de roles OAuth",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "Si la respuesta del Auth Server es comprometida, un atacante puede obtener roles elevados y acceder a módulos de configuración, usuarios y parámetros del sistema.",
+                  "mitigation": "Validar y limitar roles retornados, principio de mínimo privilegio, auditoría de cambios de rol.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t8",
+                  "title": "Fuga de tokens OAuth a servicios externos",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "Los tokens enviados al Auth Server podrían ser capturados si el servidor está comprometido o la conexión no está debidamente protegida.",
+                  "mitigation": "TLS verificado, rotación periódica de tokens, no loguear tokens en archivos de log.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f5",
+            "zIndex": 10,
+            "label": "F5: SQL Queries (Eloquent)",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "store-postgres" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F5: SQL Queries Eloquent",
+              "description": "Laravel Eloquent ORM ejecuta queries contra PostgreSQL. Tablas: lote, individuo, corral, cava, turnobeneficio, despacho. Multi-tenant por BENEFIT_INSTANCE.",
+              "outOfScope": false,
+              "protocol": "PostgreSQL TCP",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t9",
+                  "title": "Inyección SQL en endpoints de búsqueda",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "Endpoints como /batch/search/{criteria}, /individual/search/{criteria}, /supplier/search/{name} reciben parámetros que, sin sanitización, permiten inyección SQL.",
+                  "mitigation": "Usar exclusivamente Query Builder parametrizado de Laravel/Eloquent, validar formato de criteria con regex.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t10",
+                  "title": "IDOR multi-tenant entre instancias INFOCGAN e INFOBLE",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "Un usuario de INFOBLE puede acceder a GET /batch/{id} o GET /individual/{id} de INFOCGAN si los queries no filtran por BENEFIT_INSTANCE.",
+                  "mitigation": "Global Scope Eloquent que aplique filtro de BENEFIT_INSTANCE en TODOS los modelos automáticamente.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t11",
+                  "title": "Agotamiento de conexiones PostgreSQL por queries sin límite",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Denial of service",
+                  "description": "Endpoints como GET /batch (findAll sin paginación) ejecutan queries que escanean tablas completas, agotando el pool de conexiones.",
+                  "mitigation": "Paginación obligatoria en todos los listados, índices en columnas frecuentes, límite de timeout de queries.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t12",
+                  "title": "Repudio de modificaciones en datos de trazabilidad",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation",
+                  "description": "Sin logs inmutables, un usuario puede crear/modificar lotes (POST/PUT /batch) y negar haberlo hecho. Los campos fecharegistro existen pero no son suficientes.",
+                  "mitigation": "Log centralizado e inmutable de todas las mutaciones con idpersonalregistro, IP y timestamp de servidor.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f6",
+            "zIndex": 10,
+            "label": "F6: Resultados SQL",
+            "source": { "id": "store-postgres" },
+            "target": { "id": "process-laravel" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F6: Resultados SQL",
+              "description": "PostgreSQL retorna resultados de queries a Laravel. Puede contener datos sensibles de trazabilidad, licencias ICA, datos de terceros.",
+              "outOfScope": false,
+              "protocol": "PostgreSQL TCP",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "hasOpenThreats": false,
+              "threats": []
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f9",
+            "zIndex": 10,
+            "label": "F9: Upload/Download archivos",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "process-storage" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F9: Archivos al Storage Server",
+              "description": "Laravel envía y recibe archivos del Storage Server externo. Endpoints: POST /storage/file/{id}, GET /batch/storage/{entity}/{file}.",
+              "outOfScope": false,
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t13",
+                  "title": "Subida de archivos maliciosos al Storage Server",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "Sin validación del tipo MIME real, un atacante puede subir malware o scripts PHP a través de POST /storage/file/{id}.",
+                  "mitigation": "Validar MIME type en servidor, rechazar extensiones ejecutables, almacenar fuera del webroot.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t14",
+                  "title": "Acceso no autorizado a archivos de otros lotes (IDOR)",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "GET /batch/storage/{entity}/{file} podría permitir acceso a archivos de otros lotes si entity/file no se valida contra el usuario autenticado.",
+                  "mitigation": "Validar que entity pertenece al usuario/rol, aplicar $this->authorize en todos los endpoints de descarga.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f10",
+            "zIndex": 10,
+            "label": "F10: Notificaciones / Email",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "process-notify" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F10: Notificaciones al Notify Server",
+              "description": "Laravel envía notificaciones y emails con reportes PDF al Notify Server. Incluye datos de despachos, trazabilidad y licencias ICA.",
+              "outOfScope": false,
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t15",
+                  "title": "DoS por generación masiva de PDFs de reportes",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Denial of service",
+                  "description": "Endpoints como /batch/pdf/print/{id} y /necropsy/print ejecutan operaciones costosas sincrónicamente. Una llamada masiva agota la memoria del servidor.",
+                  "mitigation": "Rate limiting para endpoints PDF, generación asíncrona con colas Laravel, caché de reportes.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-f11",
+            "zIndex": 10,
+            "label": "F11: Importación masiva",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "process-import" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "F11: Importación Masiva al Import Server",
+              "description": "Laravel envía datos al Import Server para importación masiva de animales, lotes y licencias ICA. Endpoint POST /import.",
+              "outOfScope": false,
+              "protocol": "HTTPS",
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t16",
+                  "title": "Manipulación masiva de datos en importación",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "El flujo POST /import procesa archivos externos. Sin validación estricta, un atacante puede alterar masivamente registros de individuos, lotes o licencias ICA.",
+                  "mitigation": "Validar esquema y tipos de cada campo importado, transacciones atómicas con DB::beginTransaction (patrón ya definido en el proyecto).",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t17",
+                  "title": "Saturación del sistema por importación masiva abusiva",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Denial of service",
+                  "description": "Un atacante autenticado puede enviar archivos enormes repetidamente, saturando CPU, memoria y disco del contenedor PHP-FPM.",
+                  "mitigation": "Límite de tamaño en Nginx (client_max_body_size), validación de formato antes de procesar, colas para procesamiento asíncrono.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          },
+
+          {
+            "type": "tm.Flow",
+            "id": "flow-auth-sanctum",
+            "zIndex": 10,
+            "label": "Login / Token Sanctum",
+            "source": { "id": "process-laravel" },
+            "target": { "id": "process-auth" },
+            "data": {
+              "type": "tm.Flow",
+              "name": "Login / Token Sanctum",
+              "description": "Laravel delega autenticación al módulo Sanctum. POST /auth/login genera token, POST /auth/logout lo revoca.",
+              "outOfScope": false,
+              "protocol": "Interno Laravel",
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "hasOpenThreats": true,
+              "threats": [
+                {
+                  "id": "t18",
+                  "title": "Suplantación de identidad en login Sanctum",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Un atacante puede forzar credenciales contra POST /auth/login sin bloqueo por intentos fallidos ni segundo factor de autenticación.",
+                  "mitigation": "MFA para usuarios privilegiados, bloqueo tras N intentos fallidos, alertas de login sospechoso.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t19",
+                  "title": "Repudio de sesiones de autenticación",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation",
+                  "description": "Sin registros de sesión detallados, un usuario puede negar haber iniciado sesión o realizado acciones durante una sesión activa.",
+                  "mitigation": "Registrar IP, user-agent, timestamp y token ID en cada login/logout. Expandir LogStartController existente.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t20",
+                  "title": "Escalada de privilegios por bypass de CheckSpecieAccess",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "Si un atacante manipula el contexto de especie (UserSpecieService), puede acceder a corrales, cavas y lotes de especies no autorizadas.",
+                  "mitigation": "Validar especie en servidor desde BD, no confiar en parámetros del cliente para determinar acceso.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t21",
+                  "title": "Suplantación de instancia multi-tenant (BENEFIT_INSTANCE)",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Si BENEFIT_INSTANCE se puede manipular vía cabeceras, un atacante de INFOBLE accede a datos de INFOCGAN.",
+                  "mitigation": "BENEFIT_INSTANCE solo desde variable de entorno del servidor, nunca desde input del cliente.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t22",
+                  "title": "Acceso a endpoints sin autenticación Sanctum",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "Endpoints como GET /appearance/, GET /logstart/ y GET /v1/appearance/ no requieren auth:sanctum y pueden exponer información del sistema.",
+                  "mitigation": "Auditar todos los endpoints sin middleware auth:sanctum, aplicar autenticación a los que retornen datos del sistema.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t23",
+                  "title": "Escalada de privilegios en gestión de usuarios y roles",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "PUT /user/{id} y POST /role/ permiten modificar privilegios. Sin autorización granular, un usuario puede auto-asignarse roles de administrador.",
+                  "mitigation": "$this->authorize() estricto en endpoints de gestión de usuarios, log de auditoría de cambios de rol.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t24",
+                  "title": "Enumeración de lotes e individuos mediante búsquedas",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "Endpoints /batch/search/{criteria}, /individual/search/{criteria} sin límite pueden retornar toda la base de datos.",
+                  "mitigation": "Limitar resultados a máx 50, requerir criterio mínimo de 3 caracteres, $this->authorize en búsquedas.",
+                  "modelType": "STRIDE"
+                },
+                {
+                  "id": "t25",
+                  "title": "Repudio de despachos de canales y productos cárnicos",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Repudiation",
+                  "description": "Sin firma digital, un operario puede negar haber finalizado un despacho (POST /dispatch/finish/{id}) con implicaciones regulatorias ICA.",
+                  "mitigation": "Firma digital de actos de despacho, log inmutable con identidad del operario, timestamps de servidor.",
+                  "modelType": "STRIDE"
+                }
+              ]
+            }
+          }
+
+        ]
+      }
+    ]
+  }
+}
